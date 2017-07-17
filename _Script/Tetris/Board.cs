@@ -35,11 +35,13 @@ public class Board : MonoBehaviour
         float bgScaleY = 36f / 32f * _boardHeight;
         transform.localScale = new Vector3(bgScaleX, bgScaleY, 1);
 
-        cubes = new bool[_boardHeight][];
-        for (int i = 0; i < _boardHeight; i++)
+        cubes = new bool[_boardWidth][];
+        for (int i = 0; i < _boardWidth; i++)
         {
-            cubes[i] = new bool[_boardWidth];
+            cubes[i] = new bool[_boardHeight + 5];
         }
+
+        // 缓冲区为false
     }
 
     public void SetBorderSize(int width, int height)
@@ -54,6 +56,18 @@ public class Board : MonoBehaviour
     {
         xIndex = Mathf.Round((x + 18f / 100f) / 36f * 100f) + _boardWidth / 2f - 1;
         yIndex = Mathf.Round((y + 18f / 100f) / 36f * 100f) + _boardHeight / 2f - 1;
+    }
+
+    public void GetCurrentPivotIndex(out float xIndex, out float yIndex)
+    {
+        GetArrayIndex(currentCube.pivot.transform.position.x, currentCube.pivot.transform.position.y, out xIndex, out yIndex);
+    }
+
+    public Vector2 GetCurrentPivotIndex()
+    {
+        float xIndex, yIndex;
+        GetArrayIndex(currentCube.pivot.transform.position.x, currentCube.pivot.transform.position.y, out xIndex, out yIndex);
+        return new Vector2(xIndex, yIndex);
     }
 
     public void GetPos(int xIndex, int yIndex, out float x, out float y)
@@ -81,12 +95,21 @@ public class Board : MonoBehaviour
         Gizmos.DrawLine(new Vector3(Mathf.Round((pos.transform.position.x + 18f / 100f) / 36f * 100f) * 36f / 100f - 18f / 100f, 5f, 0),
             new Vector3(Mathf.Round((pos.transform.position.x + 18f / 100f) / 36f * 100f) * 36f / 100f - 18f / 100f, -5f, 0));
 
-        //   Gizmos.color = Color.blue;
-        //   Gizmos.DrawLine(new Vector3(Mathf.Round((pos.transform.position.x) / 36f * 100f) * 36f / 100f + 36 / 100f, 4f, 0),
-        //new Vector3(Mathf.Round((pos.transform.position.x) / 36f * 100f) * 36f / 100f + 36f / 100f, -4f, 0));
-
         Gizmos.DrawLine(new Vector3(5, Mathf.Round((pos.transform.position.y + 18f / 100f) / 36f * 100f) * 36f / 100f - 18f / 100f, 0),
             new Vector3(-5, Mathf.Round((pos.transform.position.y + 18f / 100f) / 36f * 100f) * 36f / 100f - 18f / 100f, 0));
+
+        Gizmos.color = Color.black;
+        for (int i = 0; i <= _boardHeight; i++)
+        {
+            Gizmos.DrawLine(new Vector3(Mathf.Round((-3.5f + 36f / 100f * i) / 36f * 100f) * 36f / 100f, 4f, 0),
+            new Vector3(Mathf.Round((-3.5f + 36f / 100f * i) / 36f * 100f) * 36f / 100f, -4f, 0));
+        }
+
+        for (int i = 0; i <= _boardWidth; i++)
+        {
+            Gizmos.DrawLine(new Vector3(4f, Mathf.Round((-3.5f + 36f / 100f * i) / 36f * 100f) * 36f / 100f, 0),
+                new Vector3(-4f, Mathf.Round((-3.5f + 36f / 100f * i) / 36f * 100f) * 36f / 100f, 0));
+        }
     }
 
     public Cube InstantiateCube()
@@ -109,30 +132,275 @@ public class Board : MonoBehaviour
         }
     }
 
-    public void updateCube()
+    public bool checkFall()
+    {
+        Vector2 currentPivotIndex = GetCurrentPivotIndex();
+
+        switch (currentCube.type)
+        {
+            case TetrisCubeType.RZ:
+                if ((int)currentPivotIndex.y > 21)
+                    return true;
+
+                if (currentCube.rotateRatio == 1)
+                {
+                    /**轴心在X, C为需要检测的方块
+                     * oxoo
+                     * oXxo
+                     * oCxo
+                     * ooCo
+                     * */
+                    print(currentPivotIndex);
+                    print(cubes[(int)currentPivotIndex.x][(int)currentPivotIndex.y]);
+                    return checkCollision(new Vector2(currentPivotIndex.x, currentPivotIndex.y - 1),
+                        new Vector2(currentPivotIndex.x + 1, currentPivotIndex.y - 2));
+                }
+                else
+                {
+                    /**
+                    * oooo
+                    * oXxo
+                    * xxCo
+                    * CCoo
+                    * */
+                    return checkCollision(new Vector2(currentPivotIndex.x + 1, currentPivotIndex.y - 1),
+                        new Vector2(currentPivotIndex.x, currentPivotIndex.y - 2),
+                        new Vector2(currentPivotIndex.x - 1, currentPivotIndex.y - 2));
+                }
+
+            default: return false;
+        }
+    }
+
+    public bool checkRotate()
+    {
+
+        return false;
+    }
+
+    public bool checkMove(bool toLeft)
+    {
+        Vector2 currentPivotIndex = GetCurrentPivotIndex();
+
+        switch (currentCube.type)
+        {
+            case TetrisCubeType.RZ:
+                if ((int)currentPivotIndex.y > 21)
+                    return true;
+
+                if (currentCube.rotateRatio == 1)
+                {
+                    /**轴心在X, L为toLeft需要检测的方块, 否则检测R
+                     * LxRo
+                     * LXxR
+                     * oLxR
+                     * */
+                    if (toLeft)
+                    {
+                        return checkCollision(new Vector2(currentPivotIndex.x - 1, currentPivotIndex.y),
+    new Vector2(currentPivotIndex.x - 1, currentPivotIndex.y + 1),
+    new Vector2(currentPivotIndex.x, currentPivotIndex.y - 1));
+                    }
+                    else
+                    {
+                        return checkCollision(new Vector2(currentPivotIndex.x + 2, currentPivotIndex.y),
+    new Vector2(currentPivotIndex.x + 2, currentPivotIndex.y - 1),
+    new Vector2(currentPivotIndex.x + 1, currentPivotIndex.y + 1));
+                    }
+
+                }
+                else
+                {
+                    /**
+                    * ooooo
+                    * oLXxR
+                    * LxxRo
+                    * ooooo
+                    * */
+                    if (toLeft)
+                    {
+                        return checkCollision(new Vector2(currentPivotIndex.x - 1, currentPivotIndex.y),
+    new Vector2(currentPivotIndex.x - 2, currentPivotIndex.y - 1));
+                    }
+                    else
+                    {
+                        return checkCollision(new Vector2(currentPivotIndex.x + 2, currentPivotIndex.y),
+    new Vector2(currentPivotIndex.x + 1, currentPivotIndex.y - 1));
+                    }
+                }
+
+            default: return false;
+        }
+    }
+
+    // 需要去掉重合方块
+    private bool checkCollision(params Vector2[] checkList)
+    {
+        foreach (Vector2 v in checkList)
+        {
+            print(v.x + "," + v.y);
+            if (v.x < 0 || v.x >= _boardWidth || v.y < 0 || cubes[(int)v.x][(int)v.y])
+            {
+                print("blocked");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void updateFallCube()
     {
         switch (currentCube.type)
         {
             case TetrisCubeType.RZ:
                 float xIndex, yIndex;
-                GetArrayIndex(currentCube.transform.position.x, currentCube.transform.position.y, out xIndex, out yIndex);
-                if (currentCube.rotateRatio == 1)
+                GetArrayIndex(currentCube.pivot.transform.position.x, currentCube.pivot.transform.position.y, out xIndex, out yIndex);
+                if (xIndex >= 0 && yIndex >= 0 && xIndex < _boardWidth && yIndex < _boardHeight)
                 {
-                    /**所有轴心都在X左下角
-                     * oxoo
-                     * oXxo
-                     * ooxo
-                     * */
-                    cubes[(int) xIndex][(int) yIndex] = true;
+                    if (currentCube.rotateRatio == 1)
+                    {
+                        /**轴心在X, D为需要置false的方块
+                         * oDoo
+                         * oxDo
+                         * oXxo
+                         * ooxo
+                         * */
+
+                        cubes[(int)xIndex][(int)yIndex + 2] = false;
+                        cubes[(int)xIndex + 1][(int)yIndex + 1] = false;
+
+                        if (yIndex + 1 < _boardHeight)
+                            cubes[(int)xIndex][(int)yIndex + 1] = true;
+
+                        cubes[(int)xIndex][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex - 1] = true;
+                    }
+                    else
+                    {
+                        /**
+                         * oooo
+                         * oXxo
+                         * xxoo
+                         * */
+                        cubes[(int)xIndex][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex] = true;
+                        cubes[(int)xIndex][(int)yIndex - 1] = true;
+                        cubes[(int)xIndex - 1][(int)yIndex - 1] = true;
+                    }
                 }
-                else
+                break;
+        }
+    }
+
+    public void updateRotateCube()
+    {
+        switch (currentCube.type)
+        {
+            case TetrisCubeType.RZ:
+                float xIndex, yIndex;
+                GetArrayIndex(currentCube.pivot.transform.position.x, currentCube.pivot.transform.position.y, out xIndex, out yIndex);
+                if (xIndex >= 0 && yIndex >= 0 && xIndex < _boardWidth && yIndex < _boardHeight)
                 {
-                    /**
-                     * oooo
-                     * oXxo
-                     * xxoo
-                     * */
-                    cubes[(int) xIndex][(int) yIndex] = true;
+                    if (currentCube.rotateRatio == 1)
+                    {
+                        /**轴心在X, D为需要置false的方块
+                         * oDoo
+                         * oxDo
+                         * oXxo
+                         * ooxo
+                         * */
+
+                        cubes[(int)xIndex][(int)yIndex + 2] = false;
+                        cubes[(int)xIndex + 1][(int)yIndex + 1] = false;
+
+                        if (yIndex + 1 < _boardHeight)
+                            cubes[(int)xIndex][(int)yIndex + 1] = true;
+
+                        cubes[(int)xIndex][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex - 1] = true;
+                    }
+                    else
+                    {
+                        /**
+                         * oooo
+                         * oXxo
+                         * xxoo
+                         * */
+                        cubes[(int)xIndex][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex] = true;
+                        cubes[(int)xIndex][(int)yIndex - 1] = true;
+                        cubes[(int)xIndex - 1][(int)yIndex - 1] = true;
+                    }
+                }
+                break;
+        }
+    }
+
+    public void updateMov
+        eCube(bool toLeft)
+    {
+        switch (currentCube.type)
+        {
+            case TetrisCubeType.RZ:
+                float xIndex, yIndex;
+                GetArrayIndex(currentCube.pivot.transform.position.x, currentCube.pivot.transform.position.y, out xIndex, out yIndex);
+                if (xIndex >= 0 && yIndex >= 0 && xIndex < _boardWidth && yIndex < _boardHeight)
+                {
+                    if (currentCube.rotateRatio == 1)
+                    {
+                        /**轴心在X, L,R为需要置false的方块
+                         * ooooo
+                         * RxLoo
+                         * RXxLo
+                         * oRxLo
+                         * */
+
+                        if (toLeft)
+                        {
+                            cubes[(int)xIndex + 1][(int)yIndex + 1] = false;
+                            cubes[(int)xIndex + 2][(int)yIndex] = false;
+                            cubes[(int)xIndex + 2][(int)yIndex - 1] = false;
+                        }
+                        else
+                        {
+                            cubes[(int)xIndex + 1][(int)yIndex - 1] = false;
+                            cubes[(int)xIndex - 1][(int)yIndex] = false;
+                            cubes[(int)xIndex][(int)yIndex - 1] = false;
+                        }
+
+                        if (yIndex + 1 < _boardHeight)
+                            cubes[(int)xIndex][(int)yIndex + 1] = true;
+
+                        cubes[(int)xIndex][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex - 1] = true;
+                    }
+                    else
+                    {
+                        /**
+                         * ooooo
+                         * oRXxL
+                         * RxxLo
+                         * */
+
+                        if (toLeft)
+                        {
+                            cubes[(int)xIndex + 2][(int)yIndex] = false;
+                            cubes[(int)xIndex + 1][(int)yIndex - 1] = false;
+                        }
+                        else
+                        {
+                            cubes[(int)xIndex - 1][(int)yIndex] = false;
+                            cubes[(int)xIndex - 2][(int)yIndex - 1] = false;
+                        }
+
+                        cubes[(int)xIndex][(int)yIndex] = true;
+                        cubes[(int)xIndex + 1][(int)yIndex] = true;
+                        cubes[(int)xIndex][(int)yIndex - 1] = true;
+                        cubes[(int)xIndex - 1][(int)yIndex - 1] = true;
+                    }
                 }
                 break;
         }

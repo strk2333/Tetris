@@ -2,35 +2,46 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Cube : MonoBehaviour {
+public class Cube : MonoBehaviour
+{
     public TetrisCubeType type;
+    public GameObject pivot;
 
-    private float originFallGap = 1f;
-    private float fallGapTime = 1f;
+    private float originFallGap;
+    private float fallGapTime = .2f;
     private Board board;
-    private int spriteIndex;
     internal int rotateRatio = 1;
     private float countTime = 0f;
     // Use this for initialization
-    void Start () {
+    void Start()
+    {
         Init();
-	}
-	
-	// Update is called once per frame
-	void Update () {
+    }
+
+    private void Init()
+    {
+        originFallGap = fallGapTime;
+        board = GameObject.Find("Board").GetComponent<Board>();
+        type = TetrisCubeType.RZ;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
         if (fallGapTime > 0f)
         {
             countTime += Time.deltaTime;
 
+            // 每fallGapTime秒执行一次下落
             if (countTime > fallGapTime)
             {
                 countTime = 0f;
                 HandleFall();
             }
 
-            if (Input.GetKeyDown(KeyCode.DownArrow))
+            if (Input.GetKey(KeyCode.DownArrow))
             {
-                fallGapTime /= 3f;
+                fallGapTime = originFallGap / 10f;
             }
             else
             {
@@ -41,36 +52,46 @@ public class Cube : MonoBehaviour {
             {
                 HandleRotate();
             }
+
+            if (Input.GetKey(KeyCode.LeftArrow) && countTime > 0.1f)
+            {
+                HandleMove(true);
+            }
         }
     }
 
     private void HandleFall()
     {
-        Fall();
-        
-        board.updateCube();
+        if (board.checkFall())
+        {
+            Fall();
+            board.updateFallCube();
+        }
+        else
+        {
+            StopCube();
+        }
     }
 
     private void HandleRotate()
     {
-        Rotate();
-        board.updateCube();
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.name == "BottomCheck")
+        if (board.checkRotate())
         {
-            fallGapTime = -1f;
-            board.currentCube = null;
+            Rotate();
+            board.updateFallCube();
+        }
+        else
+        {
+            StopCube();
         }
     }
 
-    private void Init()
+    private void HandleMove(bool toLeft)
     {
-        board = GameObject.Find("Board").GetComponent<Board>();
-        spriteIndex = 0;
-        type = TetrisCubeType.RZ;
+        if (board.checkMove(toLeft))
+        {
+            Move(toLeft);
+        }
     }
 
     private void Fall()
@@ -84,23 +105,26 @@ public class Cube : MonoBehaviour {
         {
             case TetrisCubeType.RZ:
                 transform.Rotate(new Vector3(0, 0, 90 * rotateRatio));
-                rotateRatio *= -1;
+                rotateRatio = -rotateRatio;
                 break;
         }
     }
 
-    private void GetPivotCubeIndex(out float xIndex, out float yIndex)
+    private void Move(bool toLeft)
     {
-        board.GetArrayIndex(transform.position.x, transform.position.y, out xIndex, out yIndex);
+        if (toLeft)
+        {
+            transform.position += new Vector3(-0.36f, 0f);
+        }
+        else
+        {
+            transform.position += new Vector3(0.36f, 0f);
+        }
     }
 
-    //private void getBottomIndex(out float xIndex, out float yIndex)
-    //{
-
-    //}
-
-    private void checkBottom()
+    public void StopCube()
     {
-
+        originFallGap = -1f;
+        board.currentCube = null;
     }
 }
