@@ -338,8 +338,7 @@ public class Board : MonoBehaviour
         }
     }
 
-    public void updateMov
-        eCube(bool toLeft)
+    public void updateMoveCube(bool toLeft)
     {
         switch (currentCube.type)
         {
