@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class AutoFit : MonoBehaviour {
 
-    private SpriteRenderer sr;
 	// Use this for initialization
 	void Start () {
 	}

@@ -7,11 +7,14 @@ public class Cube : MonoBehaviour
     public TetrisCubeType type;
     public GameObject pivot;
 
+    internal int rotateRatio = 1;
+
+    private bool toRotate, left, right, quickFall;
     private float originFallGap;
     private float fallGapTime = .2f;
     private Board board;
-    internal int rotateRatio = 1;
     private float countTime = 0f;
+    // private float movePressCount = 0f;
     // Use this for initialization
     void Start()
     {
@@ -22,7 +25,17 @@ public class Cube : MonoBehaviour
     {
         originFallGap = fallGapTime;
         board = GameObject.Find("Board").GetComponent<Board>();
-        type = TetrisCubeType.RZ;
+    }
+
+    private void FixedUpdate()
+    {
+        quickFall = Input.GetKey(KeyCode.DownArrow);
+
+        toRotate = Input.GetKeyDown(KeyCode.Space);
+
+        left = Input.GetKey(KeyCode.LeftArrow);
+
+        right = Input.GetKey(KeyCode.RightArrow);
     }
 
     // Update is called once per frame
@@ -39,24 +52,19 @@ public class Cube : MonoBehaviour
                 HandleFall();
             }
 
-            if (Input.GetKey(KeyCode.DownArrow))
-            {
+            if (quickFall)
                 fallGapTime = originFallGap / 10f;
-            }
             else
-            {
                 fallGapTime = originFallGap;
-            }
 
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
+            if (toRotate)
                 HandleRotate();
-            }
 
-            if (Input.GetKey(KeyCode.LeftArrow) && countTime > 0.1f)
-            {
+            if (left)
                 HandleMove(true);
-            }
+
+            if (right)
+                HandleMove(false);
         }
     }
 
@@ -78,11 +86,7 @@ public class Cube : MonoBehaviour
         if (board.checkRotate())
         {
             Rotate();
-            board.updateFallCube();
-        }
-        else
-        {
-            StopCube();
+            board.updateRotateCube();
         }
     }
 
@@ -91,12 +95,13 @@ public class Cube : MonoBehaviour
         if (board.checkMove(toLeft))
         {
             Move(toLeft);
+            board.updateMoveCube(toLeft);
         }
     }
 
     private void Fall()
     {
-        transform.position += new Vector3(0f, -0.36f);
+        transform.position += new Vector3(0f, -0.01f * DataFormat.CubeSize);
     }
 
     private void Rotate()
@@ -104,8 +109,41 @@ public class Cube : MonoBehaviour
         switch (type)
         {
             case TetrisCubeType.RZ:
-                transform.Rotate(new Vector3(0, 0, 90 * rotateRatio));
                 rotateRatio = -rotateRatio;
+                transform.RotateAround(pivot.transform.position, Vector3.forward, 90 * rotateRatio);
+                break;
+
+            case TetrisCubeType.Z:
+                rotateRatio = -rotateRatio;
+                transform.RotateAround(pivot.transform.position, Vector3.forward, 90 * rotateRatio);
+                break;
+
+            case TetrisCubeType.RL:
+                rotateRatio = ++rotateRatio % 4;
+                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
+                break;
+
+            case TetrisCubeType.L:
+                rotateRatio = ++rotateRatio % 4;
+                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
+                break;
+
+            case TetrisCubeType.T:
+                rotateRatio = ++rotateRatio % 4;
+                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
+                break;
+
+            case TetrisCubeType.I:
+                rotateRatio = ++rotateRatio % 4;
+                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
+                break;
+
+            case TetrisCubeType.O:
+                
+                break;
+
+            default:
+                Debug.LogException(new System.Exception("There is no solution to handle CubeType " + type));
                 break;
         }
     }
@@ -114,16 +152,17 @@ public class Cube : MonoBehaviour
     {
         if (toLeft)
         {
-            transform.position += new Vector3(-0.36f, 0f);
+            transform.position += new Vector3(-0.01f * DataFormat.CubeSize, 0f);
         }
         else
         {
-            transform.position += new Vector3(0.36f, 0f);
+            transform.position += new Vector3(0.01f * DataFormat.CubeSize, 0f);
         }
     }
 
     public void StopCube()
     {
+        fallGapTime = -1f;
         originFallGap = -1f;
         board.currentCube = null;
     }
