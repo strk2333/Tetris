@@ -73,7 +73,7 @@ public class Cube : MonoBehaviour
         if (board.checkFall())
         {
             Fall();
-            board.updateFallCube();
+            //board.updateFallCube();
         }
         else
         {
@@ -86,7 +86,7 @@ public class Cube : MonoBehaviour
         if (board.checkRotate())
         {
             Rotate();
-            board.updateRotateCube();
+            //board.updateRotateCube();
         }
     }
 
@@ -95,7 +95,7 @@ public class Cube : MonoBehaviour
         if (board.checkMove(toLeft))
         {
             Move(toLeft);
-            board.updateMoveCube(toLeft);
+            //board.updateMoveCube(toLeft);
         }
     }
 
@@ -106,45 +106,10 @@ public class Cube : MonoBehaviour
 
     private void Rotate()
     {
-        switch (type)
+        if (type != TetrisCubeType.O)
         {
-            case TetrisCubeType.RZ:
-                rotateRatio = -rotateRatio;
-                transform.RotateAround(pivot.transform.position, Vector3.forward, 90 * rotateRatio);
-                break;
-
-            case TetrisCubeType.Z:
-                rotateRatio = -rotateRatio;
-                transform.RotateAround(pivot.transform.position, Vector3.forward, 90 * rotateRatio);
-                break;
-
-            case TetrisCubeType.RL:
-                rotateRatio = ++rotateRatio % 4;
-                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
-                break;
-
-            case TetrisCubeType.L:
-                rotateRatio = ++rotateRatio % 4;
-                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
-                break;
-
-            case TetrisCubeType.T:
-                rotateRatio = ++rotateRatio % 4;
-                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
-                break;
-
-            case TetrisCubeType.I:
-                rotateRatio = ++rotateRatio % 4;
-                transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
-                break;
-
-            case TetrisCubeType.O:
-                
-                break;
-
-            default:
-                Debug.LogException(new System.Exception("There is no solution to handle CubeType " + type));
-                break;
+            rotateRatio = ++rotateRatio % 4;
+            transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
         }
     }
 
