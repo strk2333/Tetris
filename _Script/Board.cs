@@ -53,7 +53,7 @@ public class Board : MonoBehaviour
     {
         float x, y;
         GetStartPivotPos(9, 19, out x, out y);
-        return (Instantiate(Resources.Load("Prefabs/RZCube"), new Vector3(x, y), Quaternion.identity) as GameObject).GetComponent<Cube>();
+        return (Instantiate(Resources.Load("Prefabs/ICube"), new Vector3(x, y), Quaternion.identity) as GameObject).GetComponent<Cube>();
     }
 
     public void SetBorderSize(int width, int height)
@@ -103,9 +103,33 @@ public class Board : MonoBehaviour
                         }
                     }
                 }
+
+                if (currentCube != null)
+                {
+                    Vector2 tmp = Vector2.zero;
+                    float delta = 0.16f;
+                    switch (currentCube.rotateRatio)
+                    {
+                        // fix this
+                        case 0:
+                            tmp = new Vector2(currentCube.pivot.transform.position.x - delta, currentCube.pivot.transform.position.y - delta);
+                            break;
+                        case 1:
+                            tmp = new Vector2(currentCube.pivot.transform.position.x - delta, currentCube.pivot.transform.position.y + delta);
+                            break;
+                        case 2:
+                            tmp = new Vector2(currentCube.pivot.transform.position.x + delta, currentCube.pivot.transform.position.y + delta);
+                            break;
+                        case 3:
+                            tmp = new Vector2(currentCube.pivot.transform.position.x + delta, currentCube.pivot.transform.position.y - delta);
+                            break;
+                    }
+
+                    Gizmos.DrawSphere(new Vector2(tmp.x,
+                        tmp.y), 0.1f);
+                }
             }
         }
-
     }
 
     #region Index Calc
@@ -146,7 +170,7 @@ public class Board : MonoBehaviour
     }
     #endregion
 
-    #region check collision
+    #region check & update
     // changeType 1-fall 2-move 3-rotate
     public bool checkChange(int changeType, bool toLeft = false)
     {
@@ -159,6 +183,11 @@ public class Board : MonoBehaviour
 
     private bool checkCollision(params Vector2[] checkList)
     {
+        if (currentCube.type == TetrisCubeType.I)
+        {
+            return true;
+        }
+
         foreach (Vector2 v in checkList)
         {
             //print(v.x + "," + v.y);
@@ -170,18 +199,12 @@ public class Board : MonoBehaviour
         }
         return true;
     }
-    #endregion
-    
+
     public void updateCube()
     {
-        switch (currentCube.type)
-        {
-            case TetrisCubeType.RZ:
-                updateState(cubesToEnable.ToArray(), cubesToDisable.ToArray());
-                break;
-        }
+        updateState(cubesToEnable.ToArray(), cubesToDisable.ToArray());
     }
-    
+
     private bool HandleCheck(Vector2[] onta, int changeType, bool toLeft = false)
     {
         if (checkCollision(GetCollisionCheckCube(GetOnta(), changeType, toLeft)))
@@ -194,7 +217,9 @@ public class Board : MonoBehaviour
         }
     }
 
-    //private Vector2[] GetOnta(TetrisCubeType type, int ratio, Vector2 pivot)
+    // record currentCube info to array onta.
+    // func for data initial, properly the biggest func:P
+    // optimise it if you can.(it really needs, i kindof have some thoughts.)
     private Vector2[] GetOnta()
     {
         Vector2[] onta = new Vector2[4];
@@ -306,7 +331,7 @@ public class Board : MonoBehaviour
                     case 3:
                         onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
                         onta[1] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
-                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[2] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
                         onta[3] = new Vector2(pivotIndex.x - 1, pivotIndex.y + 1);
                         break;
                     default:
@@ -316,14 +341,121 @@ public class Board : MonoBehaviour
                 break;
 
             case TetrisCubeType.L:
+                /**
+                 * oxoo oooo xxoo ooxo
+                 * oXoo xXxo oXoo xXxo
+                 * oxxo xooo oxoo oooo
+                 * */
+                switch (ratio)
+                {
+                    case 0:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[3] = new Vector2(pivotIndex.x + 1, pivotIndex.y - 1);
+                        break;
+                    case 1:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        onta[2] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        onta[3] = new Vector2(pivotIndex.x - 1, pivotIndex.y - 1);
+                        break;
+                    case 2:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[3] = new Vector2(pivotIndex.x - 1, pivotIndex.y + 1);
+                        break;
+                    case 3:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        onta[2] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        onta[3] = new Vector2(pivotIndex.x + 1, pivotIndex.y + 1);
+                        break;
+                    default:
+                        Debug.LogException(new System.Exception("the ratio is not valid"));
+                        break;
+                }
                 break;
 
             case TetrisCubeType.T:
+                /**
+                 * oxoo oooo oxoo oxoo
+                 * oXxo xXxo xXoo xXxo
+                 * oxoo oxoo oxoo oooo
+                 * */
+                switch (ratio)
+                {
+                    case 0:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[3] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        break;
+                    case 1:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        onta[2] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        onta[3] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        break;
+                    case 2:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[3] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        break;
+                    case 3:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        onta[2] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        onta[3] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        break;
+                    default:
+                        Debug.LogException(new System.Exception("the ratio is not valid"));
+                        break;
+                }
                 break;
 
             case TetrisCubeType.I:
+                /**pivot: X's right bottom
+                 * ooxo oooo oxoo oooo
+                 * ooXo oooo oxoo xXxx
+                 * ooxo xxXx oXoo oooo
+                 * ooxo oooo oxoo oooo
+                 * */
+                switch (ratio)
+                {
+                    case 0:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        onta[3] = new Vector2(pivotIndex.x, pivotIndex.y - 2);
+                        break;
+                    case 1:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x - 2, pivotIndex.y);
+                        onta[2] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        onta[3] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        break;
+                    case 2:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x, pivotIndex.y + 1);
+                        onta[2] = new Vector2(pivotIndex.x, pivotIndex.y + 2);
+                        onta[3] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                        break;
+                    case 3:
+                        onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                        onta[1] = new Vector2(pivotIndex.x + 1, pivotIndex.y);
+                        onta[2] = new Vector2(pivotIndex.x + 2, pivotIndex.y);
+                        onta[3] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                        break;
+                    default:
+                        Debug.LogException(new System.Exception("the ratio is not valid"));
+                        break;
+                }
                 break;
 
+            // can't go here expectly
             case TetrisCubeType.O:
                 break;
 
@@ -375,6 +507,26 @@ public class Board : MonoBehaviour
     // rotate: (y, -x)
     private Vector2 GetRotatePoint(Vector2 origin, Vector2 pivot)
     {
+        if (currentCube.type == TetrisCubeType.I)
+        {
+            float delta = 0.01f * DataFormat.CubeSize / 2f;
+            switch (currentCube.rotateRatio)
+            {
+                // fix this
+                case 0:
+                    pivot = new Vector2(pivot.x - delta, pivot.y - delta);
+                    break;
+                case 1:
+                    pivot = new Vector2(pivot.x - delta, pivot.y + delta);
+                    break;
+                case 2:
+                    pivot = new Vector2(pivot.x + delta, pivot.y + delta);
+                    break;
+                case 3:
+                    pivot = new Vector2(pivot.x + delta, pivot.y - delta);
+                    break;
+            }
+        }
         Vector2 refPos = origin - pivot;
         return pivot + new Vector2(refPos.y, -refPos.x);
     }
@@ -414,4 +566,10 @@ public class Board : MonoBehaviour
             cubes[(int)v.x][(int)v.y] = false;
         }
     }
+
+    private bool isCollided()
+    {
+        return false;
+    }
+    #endregion
 }

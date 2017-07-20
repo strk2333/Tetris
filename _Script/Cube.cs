@@ -108,8 +108,33 @@ public class Cube : MonoBehaviour
     {
         if (type != TetrisCubeType.O)
         {
+
+            if (type == TetrisCubeType.I)
+            {
+                float delta = 0.01f * DataFormat.CubeSize / 2f;
+                Vector2 tmp = pivot.transform.position;
+                switch (rotateRatio)
+                {
+                    // fix this
+                    case 0:
+                        tmp = new Vector2(tmp.x - delta, tmp.y - delta);
+                        break;
+                    case 1:
+                        tmp = new Vector2(tmp.x - delta, tmp.y + delta);
+                        break;
+                    case 2:
+                        tmp = new Vector2(tmp.x + delta, tmp.y + delta);
+                        break;
+                    case 3:
+                        tmp = new Vector2(tmp.x + delta, tmp.y - delta);
+                        break;
+                }
+                transform.RotateAround(tmp, -Vector3.forward, 90);
+            }else
+            {
+                transform.RotateAround(pivot.transform.position, -Vector3.forward, 90);
+            }
             rotateRatio = ++rotateRatio % 4;
-            transform.RotateAround(pivot.transform.position, -Vector3.forward, 90);
         }
     }
 
