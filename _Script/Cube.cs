@@ -7,11 +7,11 @@ public class Cube : MonoBehaviour
     public TetrisCubeType type;
     public GameObject pivot;
 
-    internal int rotateRatio = 1;
+    internal int rotateRatio = 0;
 
     private bool toRotate, left, right, quickFall;
     private float originFallGap;
-    private float fallGapTime = .2f;
+    private float fallGapTime = 0.5f;
     private Board board;
     private float countTime = 0f;
     // private float movePressCount = 0f;
@@ -70,10 +70,10 @@ public class Cube : MonoBehaviour
 
     private void HandleFall()
     {
-        if (board.checkFall())
+        if (board.checkChange(1))
         {
             Fall();
-            //board.updateFallCube();
+            board.updateCube();
         }
         else
         {
@@ -83,19 +83,19 @@ public class Cube : MonoBehaviour
 
     private void HandleRotate()
     {
-        if (board.checkRotate())
+        if (board.checkChange(3))
         {
             Rotate();
-            //board.updateRotateCube();
+            board.updateCube();
         }
     }
 
     private void HandleMove(bool toLeft)
     {
-        if (board.checkMove(toLeft))
+        if (board.checkChange(2, toLeft))
         {
             Move(toLeft);
-            //board.updateMoveCube(toLeft);
+            board.updateCube();
         }
     }
 
@@ -109,7 +109,7 @@ public class Cube : MonoBehaviour
         if (type != TetrisCubeType.O)
         {
             rotateRatio = ++rotateRatio % 4;
-            transform.RotateAround(pivot.transform.position, Vector3.forward, 90);
+            transform.RotateAround(pivot.transform.position, -Vector3.forward, 90);
         }
     }
 
