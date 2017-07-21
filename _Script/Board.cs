@@ -13,6 +13,9 @@ public class Board : MonoBehaviour
     private List<Vector2> cubesToEnable;
     private List<Vector2> cubesToDisable;
 
+    private List<Vector2> debugV1;
+    private List<Vector2> debugV2;
+
     internal Cube currentCube;
 
     // Use this for initialization
@@ -47,13 +50,15 @@ public class Board : MonoBehaviour
 
         cubesToEnable = new List<Vector2>();
         cubesToDisable = new List<Vector2>();
+        debugV1 = new List<Vector2>();
+        debugV2 = new List<Vector2>();
     }
 
     public Cube InstantiateCube()
     {
         float x, y;
         GetStartPivotPos(9, 19, out x, out y);
-        return (Instantiate(Resources.Load("Prefabs/ICube"), new Vector3(x, y), Quaternion.identity) as GameObject).GetComponent<Cube>();
+        return (Instantiate(Resources.Load("Prefabs/OCube"), new Vector3(x, y), Quaternion.identity) as GameObject).GetComponent<Cube>();
     }
 
     public void SetBorderSize(int width, int height)
@@ -125,8 +130,20 @@ public class Board : MonoBehaviour
                             break;
                     }
 
-                    Gizmos.DrawSphere(new Vector2(tmp.x,
-                        tmp.y), 0.1f);
+                    Gizmos.DrawSphere(new Vector2(tmp.x, tmp.y), 0.1f);
+
+                    //Gizmos.color = Color.red;
+                    //foreach (Vector2 v in debugV1)
+                    //{
+                    //    GetPos((int)v.x, (int)v.y, out x1, out y1);
+                    //    Gizmos.DrawSphere(new Vector2(x1, y1), 0.05f);
+                    //}
+                    //Gizmos.color = Color.blue;
+                    //foreach (Vector2 v in debugV2)
+                    //{
+                    //    GetPos((int)v.x, (int)v.y, out x1, out y1);
+                    //    Gizmos.DrawSphere(new Vector2(x1, y1), 0.05f);
+                    //}
                 }
             }
         }
@@ -183,11 +200,6 @@ public class Board : MonoBehaviour
 
     private bool checkCollision(params Vector2[] checkList)
     {
-        if (currentCube.type == TetrisCubeType.I)
-        {
-            return true;
-        }
-
         foreach (Vector2 v in checkList)
         {
             //print(v.x + "," + v.y);
@@ -455,10 +467,16 @@ public class Board : MonoBehaviour
                 }
                 break;
 
-            // can't go here expectly
             case TetrisCubeType.O:
+                /**pivot: X's right bottom
+                 * xX
+                 * xx
+                 * */
+                onta[0] = new Vector2(pivotIndex.x, pivotIndex.y);
+                onta[1] = new Vector2(pivotIndex.x - 1, pivotIndex.y);
+                onta[2] = new Vector2(pivotIndex.x, pivotIndex.y - 1);
+                onta[3] = new Vector2(pivotIndex.x - 1, pivotIndex.y - 1);
                 break;
-
             default:
                 Debug.LogException(new System.Exception("the TetrisType is not valid"));
                 break;
@@ -492,9 +510,14 @@ public class Board : MonoBehaviour
 
                 break;
             case 3:
+                if (currentCube.type == TetrisCubeType.O)
+                    return null;
+
                 for (int i = 0; i < onta.Length; i++)
                     afterTrans[i] = GetRotatePoint(onta[i], GetCurrentPivotIndex());
 
+                debugV1.AddRange(onta);
+                debugV2.AddRange(afterTrans);
                 break;
             default:
                 break;
@@ -521,10 +544,14 @@ public class Board : MonoBehaviour
                     break;
                 case 2:
                     pivot = new Vector2(pivot.x + delta, pivot.y + delta);
-                    break;
+                    Vector2 refPos2 = origin - pivot;
+                    Vector2 tmp = pivot + new Vector2(refPos2.y, -refPos2.x);
+                    return new Vector2(tmp.x, tmp.y + 1);
                 case 3:
                     pivot = new Vector2(pivot.x + delta, pivot.y - delta);
-                    break;
+                    Vector2 refPos3 = origin - pivot;
+                    Vector2 tmp3 = pivot + new Vector2(refPos3.y, -refPos3.x);
+                    return new Vector2(tmp3.x + 1, tmp3.y);
             }
         }
         Vector2 refPos = origin - pivot;
@@ -556,14 +583,14 @@ public class Board : MonoBehaviour
 
     private void updateState(Vector2[] add, Vector2[] del)
     {
-        foreach (Vector2 v in add)
-        {
-            cubes[(int)v.x][(int)v.y] = true;
-        }
-
         foreach (Vector2 v in del)
         {
             cubes[(int)v.x][(int)v.y] = false;
+        }
+
+        foreach (Vector2 v in add)
+        {
+            cubes[(int)v.x][(int)v.y] = true;
         }
     }
 
