@@ -10,6 +10,7 @@ public class Board : MonoBehaviour
     private int _boardHeight = 20;
     private int _boardWidth = 20;
     private bool[][] cubes;
+    private System.Random randomer;
     private List<Vector2> cubesToEnable;
     private List<Vector2> cubesToDisable;
 
@@ -47,7 +48,7 @@ public class Board : MonoBehaviour
         {
             cubes[i] = new bool[_boardHeight + 5];
         }
-
+        randomer = new System.Random(new System.Guid().GetHashCode());
         cubesToEnable = new List<Vector2>();
         cubesToDisable = new List<Vector2>();
         debugV1 = new List<Vector2>();
@@ -58,7 +59,7 @@ public class Board : MonoBehaviour
     {
         float x, y;
         GetStartPivotPos(9, 19, out x, out y);
-        return (Instantiate(Resources.Load("Prefabs/OCube"), new Vector3(x, y), Quaternion.identity) as GameObject).GetComponent<Cube>();
+        return (Instantiate(Resources.Load("Prefabs/" + (TetrisCubeType) randomer.Next(0, 7) + "Cube"), new Vector3(x, y), Quaternion.identity) as GameObject).GetComponent<Cube>();
     }
 
     public void SetBorderSize(int width, int height)
